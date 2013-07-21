@@ -1,7 +1,14 @@
 # Varying Vagrant Vagrants Changelog
 
-## 0.8-working
+## 0.9-working
 
+## 0.8
+* Enable SSH agent forwarding
+* Wrap update/installation procedures with a network status check
+* Enable WP_DEBUG by default
+* Update wp-cli during provisioning
+* Better handling of package status checks
+* Better handling of custom apt sources
 * Add PHPMemcachedAdmin 1.2.2 to repository for memcached stats viewing.
 * Add phpMyAdmin 4.0.3 to repository for database management
 

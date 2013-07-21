@@ -1,25 +1,31 @@
-# provision.sh
+	# provision.sh
 #
 # This file is specified in Vagrantfile and is loaded by Vagrant as the primary
 # provisioning script whenever the commands `vagrant up`, `vagrant provision`,
 # or `vagrant reload` are used. It provides all of the default packages and
 # configurations included with Varying Vagrant Vagrants.
 
-# We calculate the duration of provisioning at the end of this script.
+# By storing the date now, we can calculate the duration of provisioning at the
+# end of this script.
 start_seconds=`date +%s`
+
+# Capture a basic ping result to one of Google's DNS servers to try and
+# determine if outside access is available to us. If it isn't, we'll
+# want to skip a few things in the future rather than creating a bunch of errors.
+ping_result=`ping -c 2 8.8.8.8 2>&1`
 
 # PACKAGE INSTALLATION
 #
 # Build a bash array to pass all of the packages we want to install to a single
-# apt-get command. This avoids having to do all the leg work each time a
-# package is set to install. It also allows us to easily comment out or add
-# single packages. We set the array as empty to begin with so that we can
-# append individual packages to it as required.
+# apt-get command. This avoids doing all the leg work each time a package is
+# set to install. It also allows us to easily comment out or add single
+# packages. We set the array as empty to begin with so that we can append
+# individual packages to it as required.
 apt_package_install_list=()
 
-# Start with a bash array containing all of the packages that we want to 
-# install on the system. We'll then loop through each of these and check
-# individual status before passing to the apt_package_install_list array.
+# Start with a bash array containing all packages we want to install in the
+# virtual machine. We'll then loop through each of these and check individual
+# status before adding them to the apt_package_install_list array.
 apt_package_check_list=(
 
 	# PHP5
@@ -74,11 +80,11 @@ echo "Check for packages to install..."
 # not yet installed, it should be added to the array of packages to install.
 for pkg in "${apt_package_check_list[@]}"
 do
-	if dpkg -s $pkg | grep -q 'Status: install ok installed';
+	if dpkg -s $pkg 2>&1 | grep -q 'Status: install ok installed';
 	then 
-		echo $pkg already installed
+		echo "  * " $pkg already installed
 	else
-		echo $pkg not yet installed
+		echo "  * " $pkg not yet installed
 		apt_package_install_list+=($pkg)
 	fi
 done
@@ -90,8 +96,9 @@ done
 # so that provisioning does not require any user input.
 if dpkg -s mysql-server | grep -q 'Status: install ok installed';
 then
-	echo "mysql-server already installed"
+	echo "  * mysql-server already installed"
 else 
+	echo "  * mysql-server not yet installed"
 	# We need to set the selections to automatically fill the password prompt
 	# for mysql while it is being installed. The password in the following two
 	# lines *is* actually set to the word 'blank' for the root user.
@@ -103,101 +110,121 @@ fi
 # Provide our custom apt sources before running `apt-get update`
 ln -sf /srv/config/apt-source-append.list /etc/apt/sources.list.d/vvv-sources.list | echo "Linked custom apt sources"
 
-# If there are any packages to be installed in the apt_package_list array,
-# then we'll run `apt-get update` and then `apt-get install` to proceed.
-if [ ${#apt_package_install_list[@]} = 0 ];
-then 
-	printf "No packages to install.\n\n"
+if [[ $ping_result == *bytes?from* ]]
+then
+	# If there are any packages to be installed in the apt_package_list array,
+	# then we'll run `apt-get update` and then `apt-get install` to proceed.
+	if [ ${#apt_package_install_list[@]} = 0 ];
+	then 
+		printf "No packages to install.\n\n"
+	else
+		# Before running `apt-get update`, we should add the public keys for
+		# the packages that we are installing from non standard sources via
+		# our appended apt source.list
+
+		# Nginx.org nginx key ABF5BD827BD9BF62
+		gpg -q --keyserver keyserver.ubuntu.com --recv-key ABF5BD827BD9BF62
+		gpg -q -a --export ABF5BD827BD9BF62 | apt-key add -
+
+		# Launchpad Subversion key EAA903E3A2F4C039
+		gpg -q --keyserver keyserver.ubuntu.com --recv-key EAA903E3A2F4C039
+		gpg -q -a --export EAA903E3A2F4C039 | apt-key add -
+
+		# Launchpad PHP key 4F4EA0AAE5267A6C
+		gpg -q --keyserver keyserver.ubuntu.com --recv-key 4F4EA0AAE5267A6C
+		gpg -q -a --export 4F4EA0AAE5267A6C | apt-key add -
+
+		# Launchpad git key A1715D88E1DF1F24
+		gpg -q --keyserver keyserver.ubuntu.com --recv-key A1715D88E1DF1F24
+		gpg -q -a --export A1715D88E1DF1F24 | apt-key add -
+
+		# update all of the package references before installing anything
+		printf "Running apt-get update....\n"
+		apt-get update --assume-yes
+
+		# install required packages
+		printf "Installing apt-get packages...\n"
+		apt-get install --assume-yes ${apt_package_install_list[@]}
+
+		# Clean up apt caches
+		apt-get clean			
+	fi
+
+	# ack-grep
+	#
+	# Install ack-rep directory from the version hosted at beyondgrep.com as the
+	# PPAs for Ubuntu Precise are not available yet.
+	if [ -f /usr/bin/ack ]
+	then
+		echo "ack-grep already installed"
+	else
+		echo "Installing ack-grep as ack"
+		curl -s http://beyondgrep.com/ack-2.04-single-file > /usr/bin/ack && chmod +x /usr/bin/ack
+	fi
+
+	# COMPOSER
+	#
+	# Install or Update Composer based on current state. Updates are direct from
+	# master branch on GitHub repository.
+	if composer --version | grep -q 'Composer version';
+	then
+		printf "Updating Composer...\n"
+		composer self-update
+	else
+		printf "Installing Composer...\n"
+		curl -sS https://getcomposer.org/installer | php
+		chmod +x composer.phar
+		mv composer.phar /usr/local/bin/composer
+	fi
+
+	# PHPUnit
+	#
+	# Check that PHPUnit, Mockery, and Hamcrest are all successfully installed. If
+	# not, then Composer should be given another shot at it. Versions for these
+	# packages are controlled in the `/srv/config/phpunit-composer.json` file.
+	if [ ! -d /usr/local/src/vvv-phpunit ]
+	then
+		printf "Installing PHPUnit, Hamcrest and Mockery...\n"
+		mkdir -p /usr/local/src/vvv-phpunit
+		cp /srv/config/phpunit-composer.json /usr/local/src/vvv-phpunit/composer.json
+		sh -c "cd /usr/local/src/vvv-phpunit && composer install"
+	else
+		cd /usr/local/src/vvv-phpunit
+		if composer show -i | grep -q 'mockery' ; then echo 'Mockery installed' ; else vvvphpunit_update=1;fi
+		if composer show -i | grep -q 'phpunit' ; then echo 'PHPUnit installed' ; else vvvphpunit_update=1;fi
+		if composer show -i | grep -q 'hamcrest'; then echo 'Hamcrest installed'; else vvvphpunit_update=1;fi
+		cd ~/
+	fi
+
+	if [ "$vvvphpunit_update" = 1 ]
+	then
+		printf "Update PHPUnit, Hamcrest and Mockery...\n"
+		cp /srv/config/phpunit-composer.json /usr/local/src/vvv-phpunit/composer.json
+		sh -c "cd /usr/local/src/vvv-phpunit && composer update"
+	fi
 else
-	# Before running `apt-get update`, we should add the public keys for
-	# the packages that we are installing from non standard sources via
-	# our appended apt source.list
-
-	# Nginx.org nginx key ABF5BD827BD9BF62
-	gpg -q --keyserver keyserver.ubuntu.com --recv-key ABF5BD827BD9BF62
-	gpg -q -a --export ABF5BD827BD9BF62 | apt-key add -
-
-	# Launchpad Subversion key EAA903E3A2F4C039
-	gpg -q --keyserver keyserver.ubuntu.com --recv-key EAA903E3A2F4C039
-	gpg -q -a --export EAA903E3A2F4C039 | apt-key add -
-
-	# Launchpad PHP key 4F4EA0AAE5267A6C
-	gpg -q --keyserver keyserver.ubuntu.com --recv-key 4F4EA0AAE5267A6C
-	gpg -q -a --export 4F4EA0AAE5267A6C | apt-key add -
-
-	# Launchpad git key A1715D88E1DF1F24
-	gpg -q --keyserver keyserver.ubuntu.com --recv-key A1715D88E1DF1F24
-	gpg -q -a --export A1715D88E1DF1F24 | apt-key add -
-
-	# update all of the package references before installing anything
-	printf "Running apt-get update....\n"
-	apt-get update --assume-yes
-
-	# install required packages
-	printf "Installing apt-get packages...\n"
-	apt-get install --assume-yes ${apt_package_install_list[@]}
-
-	# Clean up apt caches
-	apt-get clean			
+	printf "\nNo network connection available, skipping package installation"
 fi
 
-# ack-grep
-#
-# Install ack-rep directory from the version hosted at beyondgrep.com as the
-# PPAs for Ubuntu Precise are not available yet.
-if [ -f /usr/bin/ack ]
-then
-	echo "ack-grep already installed"
-else
-	echo "Installing ack-grep as ack"
-	curl -s http://beyondgrep.com/ack-2.04-single-file > /usr/bin/ack && chmod +x /usr/bin/ack
+# Configuration for nginx
+if [ ! -e /etc/nginx/server.key ]; then
+	echo "Generate Nginx server private key..."
+	vvvgenrsa=`openssl genrsa -out /etc/nginx/server.key 2048 2>&1`
+	echo $vvvgenrsa
 fi
-
-# COMPOSER
-#
-# Install or Update Composer based on current state. Updates are direct from
-# master branch on GitHub repository.
-if composer --version | grep -q 'Composer version';
-then
-	printf "Updating Composer...\n"
-	composer self-update
-else
-	printf "Installing Composer...\n"
-	curl -sS https://getcomposer.org/installer | php
-	chmod +x composer.phar
-	mv composer.phar /usr/local/bin/composer
+if [ ! -e /etc/nginx/server.csr ]; then
+	echo "Generate Certificate Signing Request (CSR)..."
+	openssl req -new -batch -key /etc/nginx/server.key -out /etc/nginx/server.csr
 fi
-
-# PHPUnit
-#
-# Check that PHPUnit, Mockery, and Hamcrest are all successfully installed. If
-# not, then Composer should be given another shot at it. Versions for these
-# packages are controlled in the `/srv/config/phpunit-composer.json` file.
-if [ ! -d /usr/local/src/vvv-phpunit ]
-then
-	printf "Installing PHPUnit, Hamcrest and Mockery...\n"
-	mkdir -p /usr/local/src/vvv-phpunit
-	cp /srv/config/phpunit-composer.json /usr/local/src/vvv-phpunit/composer.json
-	sh -c "cd /usr/local/src/vvv-phpunit && composer install"
-else
-	cd /usr/local/src/vvv-phpunit
-	if composer show -i | grep -q 'mockery'; then echo 'Mockery installed';else vvvphpunit_update=1;fi
-	if composer show -i | grep -q 'phpunit'; then echo 'PHPUnit installed'; else vvvphpunit_update=1;fi
-	if composer show -i | grep -q 'hamcrest'; then echo 'Hamcrest installed'; else vvvphpunit_update=1;fi
-	cd ~/
-fi
-
-if [ "$vvvphpunit_update" = 1 ]
-then
-	printf "Update PHPUnit, Hamcrest and Mockery...\n"
-	cp /srv/config/phpunit-composer.json /usr/local/src/vvv-phpunit/composer.json
-	sh -c "cd /usr/local/src/vvv-phpunit && composer update"
+if [ ! -e /etc/nginx/server.crt ]; then
+	echo "Sign the certificate using the above private key and CSR..."
+	vvvsigncert=`openssl x509 -req -days 365 -in /etc/nginx/server.csr -signkey /etc/nginx/server.key -out /etc/nginx/server.crt 2>&1`
+	echo $vvvsigncert
 fi
 
 # SYMLINK HOST FILES
-printf "\nLink Directories...\n"
+printf "\n\nSetup configuration file links...\n"
 
-# Configuration for nginx
 ln -sf /srv/config/nginx-config/nginx.conf /etc/nginx/nginx.conf | echo "Linked nginx.conf to /etc/nginx/"
 ln -sf /srv/config/nginx-config/nginx-wp-common.conf /etc/nginx/nginx-wp-common.conf | echo "Linked nginx-wp-common.conf to /etc/nginx/"
 
@@ -233,11 +260,8 @@ ln -sf /srv/config/vimrc /home/vagrant/.vimrc | echo "Linked vim configuration t
 #
 # Make sure the services we expect to be running are running.
 printf "\nRestart services...\n"
-printf "service nginx restart\n"
 service nginx restart
-printf "service php5-fpm restart\n"
 service php5-fpm restart
-printf "service memcached restart\n"
 service memcached restart
 
 # MySQL gives us an error if we restart a non running service, which
@@ -272,8 +296,7 @@ mysql -u root -pblank < /srv/database/init.sql | echo "Initial MySQL prep...."
 # an initial data set for MySQL.
 /srv/database/import-sql.sh
 
-# WP-CLI Install
-if [ ! -d /srv/www/wp-cli ]
+if [[ $ping_result == *bytes?from* ]]
 then
 	printf "\nDownloading wp-cli.....http://wp-cli.org\n"
 	git clone git://github.com/wp-cli/wp-cli.git /srv/www/wp-cli
@@ -322,14 +345,18 @@ else
 	printf "Skip WordPress installation, already available\n"
 fi
 
-# Checkout, install and configure WordPress trunk
-if [ ! -d /srv/www/wordpress-trunk ]
+# Install and configure the latest stable version of WordPress
+if [ ! -d /srv/www/wordpress-default ]
 then
-	printf "Checking out WordPress trunk....http://core.svn.wordpress.org/trunk\n"
-	svn checkout http://core.svn.wordpress.org/trunk/ /srv/www/wordpress-trunk
-	cd /srv/www/wordpress-trunk
-	printf "Configuring WordPress trunk...\n"
-	wp core config --dbname=wordpress_trunk --dbuser=wp --dbpass=wp --quiet --extra-php <<PHP
+	printf "Downloading WordPress.....http://wordpress.org\n"
+	cd /srv/www/
+	curl -O http://wordpress.org/latest.tar.gz
+	tar -xvf latest.tar.gz
+	mv wordpress wordpress-default
+	rm latest.tar.gz
+	cd /srv/www/wordpress-default
+	printf "Configuring WordPress...\n"
+	wp core config --dbname=wordpress_default --dbuser=wp --dbpass=wp --quiet --extra-php <<PHP
 define( "WP_DEBUG", true );
 
 // Enable Debug logging to the /wp-content/debug.log file
@@ -348,42 +375,61 @@ define( "SCRIPT_DEBUG", true );
 // Set Jetpack to Debug
 define( "JETPACK_DEV_DEBUG", true );
 PHP
-	wp core install --url=local.wordpress-trunk.dev --quiet --title="Local WordPress Trunk Dev" --admin_name=admin --admin_email="admin@local.dev" --admin_password="password"
-else
-	printf "Updating WordPress trunk...\n"
-	cd /srv/www/wordpress-trunk
-	svn up --ignore-externals
-fi
-
-# Checkout and configure the WordPress unit tests
-if [ ! -f /home/vagrant/flags/disable_wp_tests ]
-then
-	if [ ! -d /srv/www/wordpress-unit-tests ]
-	then
-		printf "Downloading WordPress Unit Tests.....https://unit-tests.svn.wordpress.org\n"
-		# Must be in a WP directory to run wp
-		cd /srv/www/wordpress-trunk
-		wp core init-tests /srv/www/wordpress-unit-tests --dbname=wordpress_unit_tests --dbuser=wp --dbpass=wp
+		wp core install --url=local.wordpress.dev --quiet --title="Local WordPress Dev" --admin_name=admin --admin_email="admin@local.dev" --admin_password="password"
 	else
-		printf "Updating WordPress unit tests...\n"	
-		cd /srv/www/wordpress-unit-tests
+		printf "Updating WordPress stable...\n"
+		cd /srv/www/wordpress-default
+		wp core upgrade
+	fi
+
+	# Checkout, install and configure WordPress trunk
+	if [ ! -d /srv/www/wordpress-trunk ]
+	then
+		printf "Checking out WordPress trunk....http://core.svn.wordpress.org/trunk\n"
+		svn checkout http://core.svn.wordpress.org/trunk/ /srv/www/wordpress-trunk
+		cd /srv/www/wordpress-trunk
+		printf "Configuring WordPress trunk...\n"
+		wp core config --dbname=wordpress_trunk --dbuser=wp --dbpass=wp --quiet --extra-php <<PHP
+define( "WP_DEBUG", true );
+PHP
+		wp core install --url=local.wordpress-trunk.dev --quiet --title="Local WordPress Trunk Dev" --admin_name=admin --admin_email="admin@local.dev" --admin_password="password"
+	else
+		printf "Updating WordPress trunk...\n"
+		cd /srv/www/wordpress-trunk
 		svn up --ignore-externals
 	fi
-fi
 
-# Download phpMyAdmin 4.0.3
-if [ ! -d /srv/www/default/database-admin ]
-then
-	printf "Downloading phpMyAdmin 4.0.3....\n"
-	cd /srv/www/default
-	wget -q -O phpmyadmin.tar.gz 'http://sourceforge.net/projects/phpmyadmin/files/phpMyAdmin/4.0.3/phpMyAdmin-4.0.3-english.tar.gz/download#!md5!07dc6ed4d65488661d2581de8d325493'
-	tar -xf phpmyadmin.tar.gz
-	mv phpMyAdmin-4.0.3-english database-admin
-	rm phpmyadmin.tar.gz
+	# Checkout and configure the WordPress unit tests
+	if [ ! -f /home/vagrant/flags/disable_wp_tests ]
+	then
+		if [ ! -d /srv/www/wordpress-unit-tests ]
+		then
+			printf "Downloading WordPress Unit Tests.....https://unit-tests.svn.wordpress.org\n"
+			# Must be in a WP directory to run wp
+			cd /srv/www/wordpress-trunk
+			wp core init-tests /srv/www/wordpress-unit-tests --dbname=wordpress_unit_tests --dbuser=wp --dbpass=wp
+		else
+			printf "Updating WordPress unit tests...\n"	
+			cd /srv/www/wordpress-unit-tests
+			svn up --ignore-externals
+		fi
+	fi
+
+	# Download phpMyAdmin 4.0.3
+	if [ ! -d /srv/www/default/database-admin ]
+	then
+		printf "Downloading phpMyAdmin 4.0.3....\n"
+		cd /srv/www/default
+		wget -q -O phpmyadmin.tar.gz 'http://sourceforge.net/projects/phpmyadmin/files/phpMyAdmin/4.0.3/phpMyAdmin-4.0.3-english.tar.gz/download#!md5!07dc6ed4d65488661d2581de8d325493'
+		tar -xf phpmyadmin.tar.gz
+		mv phpMyAdmin-4.0.3-english database-admin
+		rm phpmyadmin.tar.gz
+	else
+		printf "PHPMyAdmin 4.0.3 already installed.\n"
+	fi
 else
-	printf "PHPMyAdmin 4.0.3 already installed.\n"
+	printf "\nNo network available, skipping network installations"
 fi
-
 # Add any custom domains to the virtual machine's hosts file so that it
 # is self aware. Enter domains space delimited as shown with the default.
 DOMAINS='local.wordpress.dev local.wordpress-trunk.dev'
@@ -394,4 +440,10 @@ fi
 end_seconds=`date +%s`
 echo -----------------------------
 echo Provisioning complete in `expr $end_seconds - $start_seconds` seconds
+if [[ $ping_result == *bytes?from* ]]
+then
+	echo External network connection established, packages up to date.
+else
+	echo No external network available. Package installation and maintenance skipped.
+fi
 echo For further setup instructions, visit http://192.168.50.4
