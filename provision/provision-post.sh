@@ -35,6 +35,13 @@ else
 	wp plugin update pods
 fi
 
+if [ ! -d /srv/www/wordpress-default/wp-content/plugins/pods-unit-tests ]
+then
+	wp plugin install https://github.com/pods-framework/pods-unit-tests/archive/master.zip --activate
+else
+	wp plugin update pods-unit-tests
+fi
+
 
 cd /srv/www/wordpress-default/
 # Add Plugins
@@ -71,4 +78,11 @@ then
 	wp plugin install pods --activate
 else
 	wp plugin update pods
+fi
+
+if [ ! -d /srv/www/wordpress-default/wp-content/plugins/pods-unit-tests ]
+then
+	wp plugin install https://github.com/pods-framework/pods-unit-tests/archive/master.zip --activate
+else
+	wp plugin update pods-unit-tests
 fi
