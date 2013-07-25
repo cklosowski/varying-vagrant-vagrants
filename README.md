@@ -10,6 +10,9 @@ define( "PODS_DEVELOPER", true );
 // Enable Pods GitHub updates
 define( "PODS_GITHUB_UPDATE", true );
 
+// Enable Pods debugging and strict debugging (mu plugin)
+define( "PODS_DEBUG", true );
+
 // Disable Debug logging to the /wp-content/debug.log file
 define( "WP_DEBUG_LOG", false );
 
