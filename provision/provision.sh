@@ -1,4 +1,4 @@
-	# provision.sh
+# provision.sh
 #
 # This file is specified in Vagrantfile and is loaded by Vagrant as the primary
 # provisioning script whenever the commands `vagrant up`, `vagrant provision`,
@@ -298,65 +298,33 @@ mysql -u root -pblank < /srv/database/init.sql | echo "Initial MySQL prep...."
 
 if [[ $ping_result == *bytes?from* ]]
 then
-	printf "\nDownloading wp-cli.....http://wp-cli.org\n"
-	git clone git://github.com/wp-cli/wp-cli.git /srv/www/wp-cli
-	cd /srv/www/wp-cli
-	composer install
-else
-	printf "\nUpdating wp-cli....\n"
-	cd /srv/www/wp-cli
-	git pull --rebase origin master
-fi
-# Link `wp` to the `/usr/local/bin` directory
-ln -sf /srv/www/wp-cli/bin/wp /usr/local/bin/wp
+	# WP-CLI Install
+	if [ ! -d /srv/www/wp-cli ]
+	then
+		printf "\nDownloading wp-cli.....http://wp-cli.org\n"
+		git clone git://github.com/wp-cli/wp-cli.git /srv/www/wp-cli
+		cd /srv/www/wp-cli
+		composer install
+	else
+		printf "\nUpdating wp-cli....\n"
+		cd /srv/www/wp-cli
+		git pull --rebase origin master
+	fi
+	# Link `wp` to the `/usr/local/bin` directory
+	ln -sf /srv/www/wp-cli/bin/wp /usr/local/bin/wp
 
-# Install and configure the latest stable version of WordPress
-if [ ! -d /srv/www/wordpress-default ]
-then
-	printf "Downloading WordPress.....http://wordpress.org\n"
-	cd /srv/www/
-	curl -O http://wordpress.org/latest.tar.gz
-	tar -xvf latest.tar.gz
-	mv wordpress wordpress-default
-	rm latest.tar.gz
-	cd /srv/www/wordpress-default
-	printf "Configuring WordPress...\n"
-	wp core config --dbname=wordpress_default --dbuser=wp --dbpass=wp --quiet --extra-php <<PHP
-define( "WP_DEBUG", true );
-
-// Enable Debug logging to the /wp-content/debug.log file
-define( "WP_DEBUG_LOG", true );
-
-// Disable display of errors and warnings 
-define( "WP_DEBUG_DISPLAY", false );
-@ini_set( "display_errors", 0 );
-
-// Enable Save Queries
-define( "SAVEQUERIES", true );
-
-// Use dev versions of core JS and CSS files (only needed if you are modifying these core files)
-define( "SCRIPT_DEBUG", true );
-
-// Set Jetpack to Debug
-define( "JETPACK_DEV_DEBUG", true );
-PHP
-	wp core install --url=local.wordpress.dev --quiet --title="Local WordPress Dev" --admin_name=admin --admin_email="admin@local.dev" --admin_password="password"
-else
-	printf "Skip WordPress installation, already available\n"
-fi
-
-# Install and configure the latest stable version of WordPress
-if [ ! -d /srv/www/wordpress-default ]
-then
-	printf "Downloading WordPress.....http://wordpress.org\n"
-	cd /srv/www/
-	curl -O http://wordpress.org/latest.tar.gz
-	tar -xvf latest.tar.gz
-	mv wordpress wordpress-default
-	rm latest.tar.gz
-	cd /srv/www/wordpress-default
-	printf "Configuring WordPress...\n"
-	wp core config --dbname=wordpress_default --dbuser=wp --dbpass=wp --quiet --extra-php <<PHP
+	# Install and configure the latest stable version of WordPress
+	if [ ! -d /srv/www/wordpress-default ]
+	then
+		printf "Downloading WordPress.....http://wordpress.org\n"
+		cd /srv/www/
+		curl -O http://wordpress.org/latest.tar.gz
+		tar -xvf latest.tar.gz
+		mv wordpress wordpress-default
+		rm latest.tar.gz
+		cd /srv/www/wordpress-default
+		printf "Configuring WordPress...\n"
+		wp core config --dbname=wordpress_default --dbuser=wp --dbpass=wp --quiet --extra-php <<PHP
 define( "WP_DEBUG", true );
 
 // Enable Debug logging to the /wp-content/debug.log file
@@ -391,6 +359,22 @@ PHP
 		printf "Configuring WordPress trunk...\n"
 		wp core config --dbname=wordpress_trunk --dbuser=wp --dbpass=wp --quiet --extra-php <<PHP
 define( "WP_DEBUG", true );
+
+// Enable Debug logging to the /wp-content/debug.log file
+define( "WP_DEBUG_LOG", true );
+
+// Disable display of errors and warnings 
+define( "WP_DEBUG_DISPLAY", false );
+@ini_set( "display_errors", 0 );
+
+// Enable Save Queries
+define( "SAVEQUERIES", true );
+
+// Use dev versions of core JS and CSS files (only needed if you are modifying these core files)
+define( "SCRIPT_DEBUG", true );
+
+// Set Jetpack to Debug
+define( "JETPACK_DEV_DEBUG", true );
 PHP
 		wp core install --url=local.wordpress-trunk.dev --quiet --title="Local WordPress Trunk Dev" --admin_name=admin --admin_email="admin@local.dev" --admin_password="password"
 	else
