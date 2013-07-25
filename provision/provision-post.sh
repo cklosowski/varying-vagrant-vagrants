@@ -30,9 +30,16 @@ fi
 
 if [ ! -d /srv/www/wordpress-trunk/wp-content/plugins/pods ]
 then
-	wp plugin install pods --activate
+	wp plugin install pods
 else
 	wp plugin update pods
+fi
+
+if [ ! -d /srv/www/wordpress-trunk/wp-content/plugins/pods-2.x ]
+then
+	wp plugin install https://github.com/pods-framework/pods/archive/2.x.zip
+else
+	wp plugin update pods-2.x
 fi
 
 if [ ! -d /srv/www/wordpress-trunk/wp-content/plugins/pods-unit-tests ]
@@ -75,9 +82,16 @@ fi
 
 if [ ! -d /srv/www/wordpress-default/wp-content/plugins/pods ]
 then
-	wp plugin install pods --activate
+	wp plugin install pods
 else
 	wp plugin update pods
+fi
+
+if [ ! -d /srv/www/wordpress-default/wp-content/plugins/pods-2.x ]
+then
+	wp plugin install https://github.com/pods-framework/pods/archive/2.x.zip
+else
+	wp plugin update pods-2.x
 fi
 
 if [ ! -d /srv/www/wordpress-default/wp-content/plugins/pods-unit-tests ]
