@@ -28,14 +28,14 @@ else
 	wp plugin update user-switching
 fi
 
-if [ ! -d /srv/www/wordpress-default/wp-content/plugins/pods ]
+if [ ! -d /srv/www/wordpress-trunk/wp-content/plugins/pods ]
 then
 	wp plugin install pods --activate
 else
 	wp plugin update pods
 fi
 
-if [ ! -d /srv/www/wordpress-default/wp-content/plugins/pods-unit-tests ]
+if [ ! -d /srv/www/wordpress-trunk/wp-content/plugins/pods-unit-tests ]
 then
 	wp plugin install https://github.com/pods-framework/pods-unit-tests/archive/master.zip --activate
 else
