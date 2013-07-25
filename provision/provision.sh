@@ -341,12 +341,21 @@ then
 		wp core config --dbname=wordpress_default --dbuser=wp --dbpass=wp --quiet --extra-php <<PHP
 define( "WP_DEBUG", true );
 
-// Enable Debug logging to the /wp-content/debug.log file
-define( "WP_DEBUG_LOG", true );
+// Enable Pods Developer Preview features
+define( "PODS_DEVELOPER", true );
 
-// Disable display of errors and warnings 
-define( "WP_DEBUG_DISPLAY", false );
-@ini_set( "display_errors", 0 );
+// Enable Pods GitHub updates
+define( "PODS_GITHUB_UPDATE", true );
+
+// Enable Pods debugging and strict debugging (mu plugin)
+define( "PODS_DEBUG", true );
+
+// Disable Debug logging to the /wp-content/debug.log file
+define( "WP_DEBUG_LOG", false );
+
+// Force display of errors and warnings 
+define( "WP_DEBUG_DISPLAY", true );
+@ini_set( "display_errors", 1 );
 
 // Enable Save Queries
 define( "SAVEQUERIES", true );
@@ -374,12 +383,21 @@ PHP
 		wp core config --dbname=wordpress_trunk --dbuser=wp --dbpass=wp --quiet --extra-php <<PHP
 define( "WP_DEBUG", true );
 
-// Enable Debug logging to the /wp-content/debug.log file
-define( "WP_DEBUG_LOG", true );
+// Enable Pods Developer Preview features
+define( "PODS_DEVELOPER", true );
 
-// Disable display of errors and warnings 
-define( "WP_DEBUG_DISPLAY", false );
-@ini_set( "display_errors", 0 );
+// Enable Pods GitHub updates
+define( "PODS_GITHUB_UPDATE", true );
+
+// Enable Pods debugging and strict debugging (mu plugin)
+define( "PODS_DEBUG", true );
+
+// Disable Debug logging to the /wp-content/debug.log file
+define( "WP_DEBUG_LOG", false );
+
+// Force display of errors and warnings 
+define( "WP_DEBUG_DISPLAY", true );
+@ini_set( "display_errors", 1 );
 
 // Enable Save Queries
 define( "SAVEQUERIES", true );
