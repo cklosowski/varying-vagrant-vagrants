@@ -28,6 +28,14 @@ else
 	wp plugin update user-switching
 fi
 
+if [ ! -d /srv/www/wordpress-default/wp-content/plugins/pods ]
+then
+	wp plugin install pods --activate
+else
+	wp plugin update pods
+fi
+
+
 cd /srv/www/wordpress-default/
 # Add Plugins
 if [ ! -d /srv/www/wordpress-default/wp-content/plugins/debug-bar ]
