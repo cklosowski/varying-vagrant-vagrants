@@ -1,30 +1,25 @@
 # About This Repo
-This is a fork of the [Varying Vagrant Vagrants](https://github.com/10up/varying-vagrant-vagrants) repo from [@10up](http://github.com/10up). It serves as my development environment.
+This is a for of the [Varying Vagrant Vagrants Debug](https://github.com/cklosowski/varying-vagrant-vagrants-debug) repo which is a fork of the [Varying Vagrant Vagrants](https://github.com/10up/varying-vagrant-vagrants) repo from [@10up](http://github.com/10up). It serves as a excellent Pods development environment.
 
-### This Fork Adds The Following
+### This Fork Adds/Changes The Following
 #### Constants
 ```php
-// Enable Debug logging to the /wp-content/debug.log file
-define( "WP_DEBUG_LOG", true );
+// Enable Pods Developer Preview features
+define( "PODS_DEVELOPER", true );
 
-// Disable display of errors and warnings 
-define( "WP_DEBUG_DISPLAY", false );
-@ini_set( "display_errors", 0 );
+// Enable Pods GitHub updates
+define( "PODS_GITHUB_UPDATE", true );
 
-// Enable Save Queries
-define( "SAVEQUERIES", true );
+// Disable Debug logging to the /wp-content/debug.log file
+define( "WP_DEBUG_LOG", false );
 
-// Use dev versions of core JS and CSS files (only needed if you are modifying these core files)
-define( "SCRIPT_DEBUG", true );
-
-// Set Jetpack to Debug
-define( "JETPACK_DEV_DEBUG", true );
+// Force display of errors and warnings 
+define( "WP_DEBUG_DISPLAY", true );
+@ini_set( "display_errors", 1 );
 ```
 #### Plugins
-* Debug Bar [View Plugin](http://wordpress.org/plugins/debug-bar/)
-* Debug Bar Console [View Plugin](http://wordpress.org/plugins/debug-bar-console/)
-* Debug Bar Cron [View Plugin](http://wordpress.org/plugins/debug-bar-cron/)
-* User Switching [View Plugin](http://wordpress.org/plugins/user-switching/)
+* Pods Framework [View Plugin](http://wordpress.org/plugins/pods/)
+* Pods Unit Tests [View Plugin](https://github.com/pods-framework/pods-unit-tests)
 
 # Varying Vagrant Vagrants
 
