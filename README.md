@@ -1,10 +1,38 @@
+# About This Repo
+This is a fork of the [Varying Vagrant Vagrants](https://github.com/10up/varying-vagrant-vagrants) repo from [@10up](http://github.com/10up). It serves as my development environment.
+
+### This Fork Adds The Following
+#### Constants
+```php
+// Enable Debug logging to the /wp-content/debug.log file
+define( "WP_DEBUG_LOG", true );
+
+// Disable display of errors and warnings 
+define( "WP_DEBUG_DISPLAY", false );
+@ini_set( "display_errors", 0 );
+
+// Enable Save Queries
+define( "SAVEQUERIES", true );
+
+// Use dev versions of core JS and CSS files (only needed if you are modifying these core files)
+define( "SCRIPT_DEBUG", true );
+
+// Set Jetpack to Debug
+define( "JETPACK_DEV_DEBUG", true );
+```
+#### Plugins
+* Debug Bar [View Plugin](http://wordpress.org/plugins/debug-bar/)
+* Debug Bar Console [View Plugin](http://wordpress.org/plugins/debug-bar-console/)
+* Debug Bar Cron [View Plugin](http://wordpress.org/plugins/debug-bar-cron/)
+* User Switching [View Plugin](http://wordpress.org/plugins/user-switching/)
+
 # Varying Vagrant Vagrants
 
 Varying Vagrant Vagrants is an evolving [Vagrant](http://vagrantup.com) configuration focused on [WordPress](http://wordpress.org) development.
 
 * **Version**: 0.9-working
 * **Latest Stable**: [v0.8](https://github.com/10up/varying-vagrant-vagrants/tree/v0.8)
-* **Contributors**: [@jeremyfelt](http://github.com/jeremyfelt), [@carldanley](http://github.com/carldanley), [@ericmann](http://github.com/ericmann), [@lkwdwrd](http://github.com/lkwdwrd), [@TheLastCicada](http://github.com/TheLastCicada), [@tddewey](http://github.com/tddewey), [@johnpbloch](http://github.com/johnpbloch), [@kadamwhite](http://github.com/kadamwhite), [@scribu](http://github.com/scribu), [@danielbachhuber](http://github.com/danielbachhuber), [@tollmanz](http://github.com/tollmanz), [@mbijon](http://github.com/mbijon), [@markjaquith](http://github.com/markjaquith), [@curtismchale](http://github.com/curtismchale), [@Mamaduka](http://github.com/mamaduka), [@lgedeon](http://github.com/lgedeon), [@pmgarman](http://github.com/pmgarman), [@westonruter](http://github.com/westonruter)
+* **Contributors**: [@jeremyfelt](http://github.com/jeremyfelt), [@carldanley](http://github.com/carldanley), [@ericmann](http://github.com/ericmann), [@lkwdwrd](http://github.com/lkwdwrd), [@TheLastCicada](http://github.com/TheLastCicada), [@tddewey](http://github.com/tddewey), [@johnpbloch](http://github.com/johnpbloch), [@kadamwhite](http://github.com/kadamwhite), [@scribu](http://github.com/scribu), [@danielbachhuber](http://github.com/danielbachhuber), [@tollmanz](http://github.com/tollmanz), [@mbijon](http://github.com/mbijon), [@markjaquith](http://github.com/markjaquith), [@curtismchale](http://github.com/curtismchale), [@Mamaduka](http://github.com/mamaduka), [@lgedeon](http://github.com/lgedeon), [@pmgarman](http://github.com/pmgarman), [@westonruter](http://github.com/westonruter), [@petemall](http://github.com/petemall)
 * **Contributing**: Contributions are more than welcome. Please submit pull requests against the [master branch](https://github.com/10up/varying-vagrant-vagrants/). Thanks!
 
 ## Overview

@@ -9,10 +9,20 @@
 # end of this script.
 start_seconds=`date +%s`
 
-# Capture a basic ping result to one of Google's DNS servers to try and
-# determine if outside access is available to us. If it isn't, we'll
-# want to skip a few things in the future rather than creating a bunch of errors.
-ping_result=`ping -c 2 8.8.8.8 2>&1`
+# Capture a basic ping result to Google's primary DNS server to determine if
+# outside access is available to us. If this does not reply after 2 attempts,
+# we try one of Level3's DNS servers as well. If neither of these IPs replies to
+# a ping, then we'll skip a few things further in provisioning rather than
+# creating a bunch of errors.
+ping_result=`ping -c 2 8.8.4.4 2>&1`
+if [[ $ping_result != *bytes?from* ]]
+then
+	ping_result=`ping -c 2 4.2.2.2 2>&1`
+fi
+
+# Capture the current IP address of the virtual machine into a variable that
+# can be used when necessary throughout provisioning.
+vvv_ip=`ifconfig eth1 | ack "inet addr" | cut -d ":" -f 2 | cut -d " " -f 1`
 
 # PACKAGE INSTALLATION
 #
@@ -80,11 +90,15 @@ echo "Check for packages to install..."
 # not yet installed, it should be added to the array of packages to install.
 for pkg in "${apt_package_check_list[@]}"
 do
-	if dpkg -s $pkg 2>&1 | grep -q 'Status: install ok installed';
+	package_version=`dpkg -s $pkg 2>&1 | grep 'Version:' | cut -d " " -f 2`
+	if [[ $package_version != "" ]]
 	then 
-		echo "  * " $pkg already installed
+		space_count=`expr 20 - "${#pkg}"` #11
+		pack_space_count=`expr 30 - "${#package_version}"`
+		real_space=`expr ${space_count} + ${pack_space_count} + ${#package_version}`
+		printf " * $pkg %${real_space}.${#package_version}s" $package_version
 	else
-		echo "  * " $pkg not yet installed
+		echo " *" $pkg [not installed]
 		apt_package_install_list+=($pkg)
 	fi
 done
@@ -384,14 +398,16 @@ PHP
 	fi
 
 	# Checkout and configure the WordPress unit tests
-	if [ ! -f /home/vagrant/flags/disable_wp_tests ]
+	if [ ! -d /srv/www/wordpress-unit-tests ]
 	then
-		if [ ! -d /srv/www/wordpress-unit-tests ]
+		printf "Downloading WordPress Unit Tests.....https://unit-tests.svn.wordpress.org\n"
+		# Must be in a WP directory to run wp
+		cd /srv/www/wordpress-trunk
+		wp core init-tests /srv/www/wordpress-unit-tests --dbname=wordpress_unit_tests --dbuser=wp --dbpass=wp
+	else
+		if [ ! -d /srv/www/wordpress-unit-tests/.svn ]
 		then
-			printf "Downloading WordPress Unit Tests.....https://unit-tests.svn.wordpress.org\n"
-			# Must be in a WP directory to run wp
-			cd /srv/www/wordpress-trunk
-			wp core init-tests /srv/www/wordpress-unit-tests --dbname=wordpress_unit_tests --dbuser=wp --dbpass=wp
+			printf "Skipping WordPress unit tests...\n"
 		else
 			printf "Updating WordPress unit tests...\n"	
 			cd /srv/www/wordpress-unit-tests
@@ -430,4 +446,5 @@ then
 else
 	echo No external network available. Package installation and maintenance skipped.
 fi
-echo For further setup instructions, visit http://192.168.50.4
+
+echo For further setup instructions, visit http://$vvv_ip
