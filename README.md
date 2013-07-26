@@ -25,6 +25,32 @@ define( "WP_DEBUG_DISPLAY", true );
 * Pods Framework (github) [View Plugin](https://github.com/pods-framework/pods)
 * Pods Unit Tests [View Plugin](https://github.com/pods-framework/pods-unit-tests)
 
+# Varying Vagrant Vagrants Debug (fork of VVV)
+### This Fork Adds The Following
+#### Constants
+```php
+// Enable Debug logging to the /wp-content/debug.log file
+define( "WP_DEBUG_LOG", true );
+
+// Disable display of errors and warnings 
+define( "WP_DEBUG_DISPLAY", false );
+@ini_set( "display_errors", 0 );
+
+// Enable Save Queries
+define( "SAVEQUERIES", true );
+
+// Use dev versions of core JS and CSS files (only needed if you are modifying these core files)
+define( "SCRIPT_DEBUG", true );
+
+// Set Jetpack to Debug
+define( "JETPACK_DEV_DEBUG", true );
+```
+#### Plugins
+* Debug Bar [View Plugin](http://wordpress.org/plugins/debug-bar/)
+* Debug Bar Console [View Plugin](http://wordpress.org/plugins/debug-bar-console/)
+* Debug Bar Cron [View Plugin](http://wordpress.org/plugins/debug-bar-cron/)
+* User Switching [View Plugin](http://wordpress.org/plugins/user-switching/)
+
 # Varying Vagrant Vagrants
 
 Varying Vagrant Vagrants is an evolving [Vagrant](http://vagrantup.com) configuration focused on [WordPress](http://wordpress.org) development.
