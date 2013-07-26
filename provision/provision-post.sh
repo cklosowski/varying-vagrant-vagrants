@@ -28,6 +28,13 @@ else
 	wp plugin update user-switching
 fi
 
+if [ ! -d /srv/www/wordpress-trunk/wp-content/plugins/mp6 ]
+then
+	wp plugin install mp6
+else
+	wp plugin update mp6
+fi
+
 if [ ! -d /srv/www/wordpress-trunk/wp-content/plugins/pods ]
 then
 	wp plugin install pods
@@ -78,6 +85,13 @@ then
 	wp plugin install user-switching --activate
 else
 	wp plugin update user-switching
+fi
+
+if [ ! -d /srv/www/wordpress-default/wp-content/plugins/mp6 ]
+then
+	wp plugin install mp6
+else
+	wp plugin update mp6
 fi
 
 if [ ! -d /srv/www/wordpress-default/wp-content/plugins/pods ]
