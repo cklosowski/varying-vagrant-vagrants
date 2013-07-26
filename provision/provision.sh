@@ -445,6 +445,25 @@ PHP
 	else
 		printf "PHPMyAdmin 4.0.3 already installed.\n"
 	fi
+
+	# Symlink WordPress trunk config folders
+	if [ ! -d /srv/www/wordpress-trunk/wp-content/mu-plugins ]
+	then
+		printf "Setting up WordPress trunk symlinks....\n"
+		ln -s /srv/config/wordpress-config/mu-plugins /srv/www/wordpress-trunk/wp-content/mu-plugins
+	else
+		printf "WordPress trunk symlinks already set.\n"
+	fi
+
+	# Symlink WordPress default config folders
+	if [ ! -d /srv/www/wordpress-default/wp-content/mu-plugins ]
+	then
+		printf "Setting up WordPress default symlinks....\n"
+		ln -s /srv/config/wordpress-config/mu-plugins /srv/www/wordpress-default/wp-content/mu-plugins
+	else
+		printf "WordPress default symlinks already set.\n"
+	fi
+	
 else
 	printf "\nNo network available, skipping network installations"
 fi
