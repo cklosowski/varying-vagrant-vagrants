@@ -21,7 +21,8 @@ define( "WP_DEBUG_DISPLAY", true );
 @ini_set( "display_errors", 1 );
 ```
 #### Plugins
-* Pods Framework [View Plugin](http://wordpress.org/plugins/pods/)
+* Pods Framework (stable) [View Plugin](http://wordpress.org/plugins/pods/)
+* Pods Framework (github) [View Plugin](https://github.com/pods-framework/pods)
 * Pods Unit Tests [View Plugin](https://github.com/pods-framework/pods-unit-tests)
 
 # Varying Vagrant Vagrants
