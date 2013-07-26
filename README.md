@@ -1,5 +1,7 @@
 # About This Repo
-This is a for of the [Varying Vagrant Vagrants Debug](https://github.com/cklosowski/varying-vagrant-vagrants-debug) repo which is a fork of the [Varying Vagrant Vagrants](https://github.com/10up/varying-vagrant-vagrants) repo from [@10up](http://github.com/10up). It serves as a excellent Pods development environment.
+This is fork of the [Varying Vagrant Vagrants Debug](https://github.com/cklosowski/varying-vagrant-vagrants-debug) repo which is a fork of the [Varying Vagrant Vagrants](https://github.com/10up/varying-vagrant-vagrants) repo from [@10up](http://github.com/10up).
+
+It aims to serve as an excellent Pods development environment.
 
 ### This Fork Adds/Changes The Following
 #### Constants
