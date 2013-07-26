@@ -21,6 +21,7 @@ define( "WP_DEBUG_DISPLAY", true );
 @ini_set( "display_errors", 1 );
 ```
 #### Plugins
+* MP6 [View Plugin](http://wordpress.org/plugins/mp6/)
 * Pods Framework (stable) [View Plugin](http://wordpress.org/plugins/pods/)
 * Pods Framework (github) [View Plugin](https://github.com/pods-framework/pods)
 * Pods Unit Tests [View Plugin](https://github.com/pods-framework/pods-unit-tests)
