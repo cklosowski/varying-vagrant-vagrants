@@ -42,11 +42,11 @@ else
 	wp plugin update pods-2.x
 fi
 
-if [ ! -d /srv/www/wordpress-trunk/wp-content/plugins/pods-unit-tests ]
+if [ ! -d /srv/www/wordpress-trunk/wp-content/plugins/pods-unit-tests-master ]
 then
 	wp plugin install https://github.com/pods-framework/pods-unit-tests/archive/master.zip --activate
 else
-	wp plugin update pods-unit-tests
+	wp plugin update pods-unit-tests-master
 fi
 
 
@@ -94,9 +94,9 @@ else
 	wp plugin update pods-2.x
 fi
 
-if [ ! -d /srv/www/wordpress-default/wp-content/plugins/pods-unit-tests ]
+if [ ! -d /srv/www/wordpress-default/wp-content/plugins/pods-unit-tests-master ]
 then
 	wp plugin install https://github.com/pods-framework/pods-unit-tests/archive/master.zip --activate
 else
-	wp plugin update pods-unit-tests
+	wp plugin update pods-unit-tests-master
 fi
