@@ -30,7 +30,7 @@ fi
 
 if [ ! -d /srv/www/wordpress-trunk/wp-content/plugins/mp6 ]
 then
-	wp plugin install mp6
+	wp plugin install mp6 --activate
 else
 	wp plugin update mp6
 fi
@@ -89,7 +89,7 @@ fi
 
 if [ ! -d /srv/www/wordpress-default/wp-content/plugins/mp6 ]
 then
-	wp plugin install mp6
+	wp plugin install mp6 --activate
 else
 	wp plugin update mp6
 fi
