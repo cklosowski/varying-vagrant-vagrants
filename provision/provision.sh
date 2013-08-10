@@ -20,10 +20,6 @@ then
 	ping_result=`ping -c 2 4.2.2.2 2>&1`
 fi
 
-# Capture the current IP address of the virtual machine into a variable that
-# can be used when necessary throughout provisioning.
-vvv_ip=`ifconfig eth1 | ack "inet addr" | cut -d ":" -f 2 | cut -d " " -f 1`
-
 # PACKAGE INSTALLATION
 #
 # Build a bash array to pass all of the packages we want to install to a single
@@ -68,6 +64,9 @@ apt_package_check_list=(
 	# memcached is made available for object caching
 	memcached
 
+	# mysql is the default database
+	mysql-server
+
 	# other packages that come in handy
 	imagemagick
 	subversion
@@ -77,6 +76,10 @@ apt_package_check_list=(
 	curl
 	make
 	vim
+	colordiff
+
+	# Req'd for Webgrind
+	graphviz
 
 	# dos2unix
 	# Allows conversion of DOS style line endings to something we'll have less
@@ -84,7 +87,7 @@ apt_package_check_list=(
 	dos2unix
 )
 
-echo "Check for packages to install..."
+echo "Check for apt packages to install..."
 
 # Loop through each of our packages that should be installed on the system. If
 # not yet installed, it should be added to the array of packages to install.
@@ -92,11 +95,11 @@ for pkg in "${apt_package_check_list[@]}"
 do
 	package_version=`dpkg -s $pkg 2>&1 | grep 'Version:' | cut -d " " -f 2`
 	if [[ $package_version != "" ]]
-	then 
+	then
 		space_count=`expr 20 - "${#pkg}"` #11
 		pack_space_count=`expr 30 - "${#package_version}"`
 		real_space=`expr ${space_count} + ${pack_space_count} + ${#package_version}`
-		printf " * $pkg %${real_space}.${#package_version}s" $package_version
+		printf " * $pkg %${real_space}.${#package_version}s ${package_version}\n"
 	else
 		echo " *" $pkg [not installed]
 		apt_package_install_list+=($pkg)
@@ -105,21 +108,12 @@ done
 
 # MySQL
 #
-# The current state of MySQL should be done outside of the looping done above.
-# This allows us to set the MySQL specific settings for the root password
-# so that provisioning does not require any user input.
-if dpkg -s mysql-server | grep -q 'Status: install ok installed';
-then
-	echo "  * mysql-server already installed"
-else 
-	echo "  * mysql-server not yet installed"
-	# We need to set the selections to automatically fill the password prompt
-	# for mysql while it is being installed. The password in the following two
-	# lines *is* actually set to the word 'blank' for the root user.
-	echo mysql-server mysql-server/root_password password blank | debconf-set-selections
-	echo mysql-server mysql-server/root_password_again password blank | debconf-set-selections
-	apt_package_install_list+=('mysql-server')
-fi
+# Use debconf-set-selections to specify the default password for the root MySQL
+# account. This runs on every provision, even if MySQL has been installed. If
+# MySQL is already installed, it will not affect anything. The password in the
+# following two lines *is* actually set to the word 'blank' for the root user.
+echo mysql-server mysql-server/root_password password blank | debconf-set-selections
+echo mysql-server mysql-server/root_password_again password blank | debconf-set-selections
 
 # Provide our custom apt sources before running `apt-get update`
 ln -sf /srv/config/apt-source-append.list /etc/apt/sources.list.d/vvv-sources.list | echo "Linked custom apt sources"
@@ -129,8 +123,8 @@ then
 	# If there are any packages to be installed in the apt_package_list array,
 	# then we'll run `apt-get update` and then `apt-get install` to proceed.
 	if [ ${#apt_package_install_list[@]} = 0 ];
-	then 
-		printf "No packages to install.\n\n"
+	then
+		printf "No apt packages to install.\n\n"
 	else
 		# Before running `apt-get update`, we should add the public keys for
 		# the packages that we are installing from non standard sources via
@@ -161,7 +155,7 @@ then
 		apt-get install --assume-yes ${apt_package_install_list[@]}
 
 		# Clean up apt caches
-		apt-get clean			
+		apt-get clean
 	fi
 
 	# ack-grep
@@ -237,38 +231,41 @@ if [ ! -e /etc/nginx/server.crt ]; then
 fi
 
 # SYMLINK HOST FILES
-printf "\n\nSetup configuration file links...\n"
+printf "\nSetup configuration file links...\n"
 
-ln -sf /srv/config/nginx-config/nginx.conf /etc/nginx/nginx.conf | echo "Linked nginx.conf to /etc/nginx/"
-ln -sf /srv/config/nginx-config/nginx-wp-common.conf /etc/nginx/nginx-wp-common.conf | echo "Linked nginx-wp-common.conf to /etc/nginx/"
+ln -sf /srv/config/nginx-config/nginx.conf /etc/nginx/nginx.conf | echo " * /srv/config/nginx-config/nginx.conf -> /etc/nginx/nginx.conf"
+ln -sf /srv/config/nginx-config/nginx-wp-common.conf /etc/nginx/nginx-wp-common.conf | echo " * /srv/config/nginx-config/nginx-wp-common.conf -> /etc/nginx/nginx-wp-common.conf"
 
 # Configuration for php5-fpm
-ln -sf /srv/config/php5-fpm-config/www.conf /etc/php5/fpm/pool.d/www.conf | echo "Linked www.conf to /etc/php5/fpm/pool.d/"
+ln -sf /srv/config/php5-fpm-config/www.conf /etc/php5/fpm/pool.d/www.conf | echo " * /srv/config/php5-fpm-config/www.conf -> /etc/php5/fpm/pool.d/www.conf"
 
 # Provide additional directives for PHP in a custom ini file
-ln -sf /srv/config/php5-fpm-config/php-custom.ini /etc/php5/fpm/conf.d/php-custom.ini | echo "Linked php-custom.ini to /etc/php5/fpm/conf.d/php-custom.ini"
+ln -sf /srv/config/php5-fpm-config/php-custom.ini /etc/php5/fpm/conf.d/php-custom.ini | echo " * /srv/config/php5-fpm-config/php-custom.ini -> /etc/php5/fpm/conf.d/php-custom.ini"
 
-# Configuration for Xdebug - Mod disabled by default
-php5dismod xdebug
-ln -sf /srv/config/php5-fpm-config/xdebug.ini /etc/php5/fpm/conf.d/xdebug.ini | echo "Linked xdebug.ini to /etc/php5/fpm/conf.d/xdebug.ini"
+# Configuration for Xdebug
+ln -sf /srv/config/php5-fpm-config/xdebug.ini /etc/php5/fpm/conf.d/xdebug.ini | echo " * /srv/config/php5-fpm-config/xdebug.ini -> /etc/php5/fpm/conf.d/xdebug.ini"
 
 # Configuration for APC
-ln -sf /srv/config/php5-fpm-config/apc.ini /etc/php5/fpm/conf.d/apc.ini | echo "Linked apc.ini to /etc/php5/fpm/conf.d/"
+ln -sf /srv/config/php5-fpm-config/apc.ini /etc/php5/fpm/conf.d/apc.ini | echo " * /srv/config/php5-fpm-config/apc.ini -> /etc/php5/fpm/conf.d/apc.ini"
 
 # Configuration for mysql
-cp /srv/config/mysql-config/my.cnf /etc/mysql/my.cnf | echo "Linked my.cnf to /etc/mysql/"
+cp /srv/config/mysql-config/my.cnf /etc/mysql/my.cnf | echo " * /srv/config/mysql-config/my.cnf -> /etc/mysql/my.cnf"
 
 # Configuration for memcached
-ln -sf /srv/config/memcached-config/memcached.conf /etc/memcached.conf | echo "Linked memcached.conf to /etc/"
+ln -sf /srv/config/memcached-config/memcached.conf /etc/memcached.conf | echo " * /srv/config/memcached-config/memcached.conf -> /etc/memcached.conf"
 
 # Custom bash_profile for our vagrant user
-ln -sf /srv/config/bash_profile /home/vagrant/.bash_profile | echo "Linked .bash_profile to vagrant user's home directory..."
+ln -sf /srv/config/bash_profile /home/vagrant/.bash_profile | echo " * /srv/config/bash_profile -> /home/vagrant/.bash_profile"
 
 # Custom bash_aliases included by vagrant user's .bashrc
-ln -sf /srv/config/bash_aliases /home/vagrant/.bash_aliases | echo "Linked .bash_aliases to vagrant user's home directory..."
+ln -sf /srv/config/bash_aliases /home/vagrant/.bash_aliases | echo " * /srv/config/bash_aleases -> /home/vagrant/.bash_aliases"
 
 # Custom vim configuration via .vimrc
-ln -sf /srv/config/vimrc /home/vagrant/.vimrc | echo "Linked vim configuration to home directory..."
+ln -sf /srv/config/vimrc /home/vagrant/.vimrc | echo " * /srv/config/vimrc -> /home/vagrant/.vimrc"
+
+# Capture the current IP address of the virtual machine into a variable that
+# can be used when necessary throughout provisioning.
+vvv_ip=`ifconfig eth1 | ack "inet addr" | cut -d ":" -f 2 | cut -d " " -f 1`
 
 # RESTART SERVICES
 #
@@ -277,6 +274,9 @@ printf "\nRestart services...\n"
 service nginx restart
 service php5-fpm restart
 service memcached restart
+
+# Disable PHP Xdebug module by default
+php5dismod xdebug
 
 # MySQL gives us an error if we restart a non running service, which
 # happens after a `vagrant halt`. Check to see if it's running before
@@ -306,7 +306,7 @@ fi
 # users and databases that our vagrant setup relies on.
 mysql -u root -pblank < /srv/database/init.sql | echo "Initial MySQL prep...."
 
-# Process each mysqldump SQL file in database/backups to import 
+# Process each mysqldump SQL file in database/backups to import
 # an initial data set for MySQL.
 /srv/database/import-sql.sh
 
@@ -323,9 +323,25 @@ then
 		printf "\nUpdating wp-cli....\n"
 		cd /srv/www/wp-cli
 		git pull --rebase origin master
+		composer update
 	fi
 	# Link `wp` to the `/usr/local/bin` directory
 	ln -sf /srv/www/wp-cli/bin/wp /usr/local/bin/wp
+
+	# Webgrind install (for viewing callgrind/cachegrind files produced by
+	# xdebug profiler)
+	if [ ! -d /srv/www/default/webgrind ]
+	then
+		printf "\nDownloading webgrind.....https://github.com/jokkedk/webgrind\n"
+		git clone git://github.com/jokkedk/webgrind.git /srv/www/default/webgrind
+
+		printf "\nLinking webgrind config file...\n"
+		ln -sf /srv/config/webgrind-config.php /srv/www/default/webgrind/config.php | echo " * /srv/config/webgrind-config.php -> /srv/www/default/webgrind/config.php"
+	else
+		printf "\nUpdating webgrind....\n"
+		cd /srv/www/default/webgrind
+		git pull --rebase origin master
+	fi
 
 	# Install and configure the latest stable version of WordPress
 	if [ ! -d /srv/www/wordpress-default ]
@@ -427,7 +443,7 @@ PHP
 		then
 			printf "Skipping WordPress unit tests...\n"
 		else
-			printf "Updating WordPress unit tests...\n"	
+			printf "Updating WordPress unit tests...\n"
 			cd /srv/www/wordpress-unit-tests
 			svn up --ignore-externals
 		fi
