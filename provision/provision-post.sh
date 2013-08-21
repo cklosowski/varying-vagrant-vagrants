@@ -57,3 +57,27 @@ then
 else
 	wp plugin update user-switching
 fi
+
+# Appending to the PHP config for xdebug
+echo "Verifying Xdebug Install"
+
+echo "Installing xdebug"
+
+# Install XDEBUG for cache grinding
+sudo pecl install xdebug
+
+# Create a directory to grind to
+if [ ! -d /srv/www/profiling ]
+then
+	mkdir /srv/www/profiling
+fi
+
+XDEBUG_CONFIG='zend_extension="xdebug.so"
+xdebug.profiler_enable = 0
+xdebug.profiler_output_dir = /srv/www/profiling
+xdebug.profiler_enable_trigger = 1
+xdebug.profiler_output_name = callgrind.out.%p'
+
+if ! grep -q "$XDEBUG_CONFIG" /etc/php5/fpm/php.ini
+then echo "$XDEBUG_CONFIG" >> /etc/php5/fpm/php.ini
+fi
