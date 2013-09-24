@@ -24,6 +24,7 @@ define( "JETPACK_DEV_DEBUG", true );
 * Debug Bar [View Plugin](http://wordpress.org/plugins/debug-bar/)
 * Debug Bar Console [View Plugin](http://wordpress.org/plugins/debug-bar-console/)
 * Debug Bar Cron [View Plugin](http://wordpress.org/plugins/debug-bar-cron/)
+* Debug Bar Post Meta [View Plugin](http://wordpress.org/plugins/tdd-debug-bar-post-meta/)
 * User Switching [View Plugin](http://wordpress.org/plugins/user-switching/)
 
 # Varying Vagrant Vagrants
