@@ -2,12 +2,17 @@
 # vi: set ft=ruby :
 
 dir = Dir.pwd
+vagrant_dir = File.expand_path(File.dirname(__FILE__))
 
 Vagrant.configure("2") do |config|
 
+  # Store the current version of Vagrant for use in conditionals when dealing
+  # with possible backward compatible issues.
+  vagrant_version = Vagrant::VERSION.sub(/^v/, '')
+
   # Configurations from 1.0.x can be placed in Vagrant 1.1.x specs like the following.
   config.vm.provider :virtualbox do |v|
-	v.customize ["modifyvm", :id, "--memory", 512]
+    v.customize ["modifyvm", :id, "--memory", 512]
   end
 
   # Forward Agent
@@ -15,16 +20,34 @@ Vagrant.configure("2") do |config|
   # Enable agent forwarding on vagrant ssh commands. This allows you to use identities
   # established on the host machine inside the guest. See the manual for ssh-add
   config.ssh.forward_agent = true
-  
+
   # Default Ubuntu Box
   #
   # This box is provided by Vagrant at vagrantup.com and is a nicely sized (290MB)
-  # box containing the Unbuntu 12.0.4 Precise 32 bit release. Once this box is downloaded
+  # box containing the Ubuntu 12.0.4 Precise 32 bit release. Once this box is downloaded
   # to your host computer, it is cached for future use under the specified box name.
   config.vm.box = "precise32"
   config.vm.box_url = "http://files.vagrantup.com/precise32.box"
 
   config.vm.hostname = "vvv"
+
+  # Local Machine Hosts
+  #
+  # If the Vagrant plugin hostsupdater (https://github.com/cogitatio/vagrant-hostsupdater) is
+  # installed, the following will automatically configure your local machine's hosts file to
+  # be aware of the domains specified below. Watch the provisioning script as you may be
+  # required to enter a password for Vagrant to access your hosts file.
+  #
+  # By default, we'll include the domains setup by VVV. A short term goal is to read these in
+  # from a local config file so that they can be more dynamic to your setup.
+  if defined? VagrantPlugins::HostsUpdater
+    config.hostsupdater.aliases = [
+      "local.wordpress.dev",
+      "local.wordpress-trunk.dev",
+      "src.wordpress-develop.dev",
+      "build.wordpress-develop.dev"
+    ]
+  end
 
   # Default Box IP Address
   #
@@ -36,7 +59,7 @@ Vagrant.configure("2") do |config|
   # If you are running more than one VM through Virtualbox, different subnets should be used
   # for those as well. This includes other Vagrant boxes.
   config.vm.network :private_network, ip: "192.168.50.4"
- 
+
   # Drive mapping
   #
   # The following config.vm.share_folder settings will map directories in your Vagrant
@@ -53,50 +76,58 @@ Vagrant.configure("2") do |config|
   # This directory is used to maintain default database scripts as well as backed
   # up mysql dumps (SQL files) that are to be imported automatically on vagrant up
   config.vm.synced_folder "database/", "/srv/database"
-  config.vm.synced_folder "database/data/", "/var/lib/mysql", :extra => 'dmode=777,fmode=777'
+  if vagrant_version >= "1.3.0"
+    config.vm.synced_folder "database/data/", "/var/lib/mysql", :mount_options => [ "dmode=777", "fmode=777" ]
+  else
+    config.vm.synced_folder "database/data/", "/var/lib/mysql", :extra => [ "dmode=777", "fmode=777" ]
+  end
 
   # /srv/config/
   #
   # If a server-conf directory exists in the same directory as your Vagrantfile,
   # a mapped directory inside the VM will be created that contains these files.
-  # This directory is currently used to maintain various config files for php and 
+  # This directory is currently used to maintain various config files for php and
   # nginx as well as any pre-existing database files.
   config.vm.synced_folder "config/", "/srv/config"
-  
+
   # /srv/config/nginx-config/sites/
   #
   # If a sites directory exists inside the above server-conf directory, it will be
   # added as a mapped directory inside the VM as well. This is used to maintain specific
   # site configuration files for nginx
   config.vm.synced_folder "config/nginx-config/sites/", "/etc/nginx/custom-sites"
-  
+
   # /srv/www/
   #
   # If a www directory exists in the same directory as your Vagrantfile, a mapped directory
   # inside the VM will be created that acts as the default location for nginx sites. Put all
   # of your project files here that you want to access through the web server
-  config.vm.synced_folder "www/", "/srv/www/", :owner => "www-data", :extra => 'dmode=775,fmode=774'
+  if vagrant_version >= "1.3.0"
+    config.vm.synced_folder "www/", "/srv/www/", :owner => "www-data", :mount_options => [ "dmode=775", "fmode=774" ]
+  else
+    config.vm.synced_folder "www/", "/srv/www/", :owner => "www-data", :extra => [ "dmode=775", "fmode=774" ]
+  end
 
   # Customfile - POSSIBLY UNSTABLE
   #
   # Use this to insert your own (and possibly rewrite) Vagrant config lines. Helpful
   # for mapping additional drives. If a file 'Customfile' exists in the same directory
-  # as this Vagrantfile, it will be evaluated as ruby inline as it loads. 
-  # 
-  # Note that if you find yourself using a Customfile for anything crazy or specifying 
+  # as this Vagrantfile, it will be evaluated as ruby inline as it loads.
+  #
+  # Note that if you find yourself using a Customfile for anything crazy or specifying
   # different provisioning, then you may want to consider a new Vagrantfile entirely.
-  if File.exists?('Customfile') then
-    eval(IO.read('Customfile'), binding)
+  if File.exists?(File.join(vagrant_dir,'Customfile')) then
+    eval(IO.read(File.join(vagrant_dir,'Customfile')), binding)
   end
 
   # Provisioning
-  # 
+  #
   # Process one or more provisioning scripts depending on the existence of custom files.
   #
   # provison-pre.sh acts as a pre-hook to our default provisioning script. Anything that
-  # should run before the shell commands laid out in provision.sh (or your provision-custom.sh 
+  # should run before the shell commands laid out in provision.sh (or your provision-custom.sh
   # file) should go in this script. If it does not exist, no extra provisioning will run.
-  if File.exists?('provision/provision-pre.sh') then
+  if File.exists?(File.join(vagrant_dir,'provision','provision-pre.sh')) then
     config.vm.provision :shell, :path => File.join( "provision", "provision-pre.sh" )
   end
 
@@ -106,7 +137,7 @@ Vagrant.configure("2") do |config|
   # provision directory. If it is detected that a provision-custom.sh script has been
   # created, that is run as a replacement. This is an opportunity to replace the entirety
   # of the provisioning provided by default.
-  if File.exists?('provision/provision-custom.sh') then
+  if File.exists?(File.join(vagrant_dir,'provision','provision-custom.sh')) then
     config.vm.provision :shell, :path => File.join( "provision", "provision-custom.sh" )
   else
     config.vm.provision :shell, :path => File.join( "provision", "provision.sh" )
@@ -116,7 +147,7 @@ Vagrant.configure("2") do |config|
   # run after the shell commands laid out in provision.sh or provision-custom.sh should be
   # put into this file. This provides a good opportunity to install additional packages
   # without having to replace the entire default provisioning script.
-  if File.exists?('provision/provision-post.sh') then
+  if File.exists?(File.join(vagrant_dir,'provision','provision-post.sh')) then
     config.vm.provision :shell, :path => File.join( "provision", "provision-post.sh" )
   end
 end
