@@ -1,0 +1,74 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Pushover Notifications for WP e-Commerce\n"
+"POT-Creation-Date: 2013-07-21 22:27-0700\n"
+"PO-Revision-Date: 2013-07-21 22:28-0700\n"
+"Last-Translator: Chris Klosowski <cklosowski@gmail.com>\n"
+"Language-Team: WPPush <chris@wp-push.com>\n"
+"Language: English\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+"X-Poedit-KeywordsList: __;_e;esc_html\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SearchPath-0: /var/www/wordpress/wp-content/plugins/pushover-"
+"notifications-wpec-ext\n"
+
+#: /var/www/wordpress/wp-content/plugins/pushover-notifications-wpec-ext/includes/notification-functions.php:23
+msgid "Order Submitted"
+msgstr ""
+
+#: /var/www/wordpress/wp-content/plugins/pushover-notifications-wpec-ext/includes/notification-functions.php:30
+#, php-format
+msgid "%s: %s"
+msgstr ""
+
+#: /var/www/wordpress/wp-content/plugins/pushover-notifications-wpec-ext/includes/notification-functions.php:37
+#, php-format
+msgid "Total Sale: %s"
+msgstr ""
+
+#: /var/www/wordpress/wp-content/plugins/pushover-notifications-wpec-ext/includes/notification-functions.php:76
+#, php-format
+msgid "%s: Orders Report %s"
+msgstr ""
+
+#: /var/www/wordpress/wp-content/plugins/pushover-notifications-wpec-ext/includes/notification-functions.php:77
+#, php-format
+msgid "Est. Earnings: %s %sOrders: %d"
+msgstr ""
+
+#: /var/www/wordpress/wp-content/plugins/pushover-notifications-wpec-ext/includes/admin/admin-functions.php:8
+msgid ""
+"To use Pushover Notifications for Restrict Content Pro you need to install "
+"and activate WP E-Commerce and Pushover Notifications for WordPress."
+msgstr ""
+
+#: /var/www/wordpress/wp-content/plugins/pushover-notifications-wpec-ext/includes/admin/admin-functions.php:18
+#, php-format
+msgid ""
+"Your Pushover Notifications core plugin is out of date. Please update to at "
+"least version 1.7.4 in order to use Pushover Notifiations for WP E-Commerce. "
+"<a href=\"%s\">Update</a>"
+msgstr ""
+
+#: /var/www/wordpress/wp-content/plugins/pushover-notifications-wpec-ext/includes/admin/admin-functions.php:32
+msgid "WP E-Commerce Settings"
+msgstr ""
+
+#: /var/www/wordpress/wp-content/plugins/pushover-notifications-wpec-ext/includes/admin/admin-functions.php:34
+msgid "When Orders Reach Status:"
+msgstr ""
+
+#: /var/www/wordpress/wp-content/plugins/pushover-notifications-wpec-ext/includes/admin/admin-functions.php:44
+msgid "Daily Sales Report"
+msgstr ""
+
+#: /var/www/wordpress/wp-content/plugins/pushover-notifications-wpec-ext/includes/admin/admin-functions.php:71
+msgid "Pushover Notifications for WP E-Commerce"
+msgstr ""
+
+#: /var/www/wordpress/wp-content/plugins/pushover-notifications-wpec-ext/includes/admin/admin-functions.php:73
+msgid "Enter Pushover Notifications for WP E-Commerce Key"
+msgstr ""
