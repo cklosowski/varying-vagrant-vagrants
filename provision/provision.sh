@@ -444,7 +444,6 @@ define( "SCRIPT_DEBUG", true );
 
 // Set Jetpack to Debug
 define( "JETPACK_DEV_DEBUG", true );
-=======
 PHP
 		wp core install --url=local.wordpress.dev --quiet --title="Local WordPress Dev" --admin_name=admin --admin_email="admin@local.dev" --admin_password="password" --allow-root 
 	else
